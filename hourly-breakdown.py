@@ -1,25 +1,17 @@
 import sqlite3
 from datetime import datetime
-from zoneinfo import ZoneInfo  # Python 3.9+
+from zoneinfo import ZoneInfo  # Using tzdata installed
+import matplotlib.pyplot as plt
 
 # --- CONFIG ---
 anki_db_path = r"C:\Users\Kopecky_J\AppData\Roaming\Anki2\User 1\collection.anki2"
 
-# Time zone of your Anki reviews (replace with your actual zone)
-local_tz = ZoneInfo("Europe/Berlin")  
+# Your local timezone
+local_tz = ZoneInfo("Europe/Berlin")
 
-# Date range options
-# Option 1: last year
-# start_date = datetime(datetime.now().year - 1, 1, 1, tzinfo=local_tz)
-# end_date = datetime(datetime.now().year - 1, 12, 31, 23, 59, 59, tzinfo=local_tz)
-
-# Option 2: specific year
-# start_date = datetime(2023, 1, 1, tzinfo=local_tz)
-# end_date = datetime(2023, 12, 31, 23, 59, 59, tzinfo=local_tz)
-
-# Option 3: custom range, e.g., Jan 2024 to Mar 2024
-start_date = datetime(2021, 1, 1, tzinfo=local_tz)
-end_date = datetime(2027, 3, 31, 23, 59, 59, tzinfo=local_tz)
+# Date range
+start_date = datetime(2020, 11, 1, tzinfo=local_tz)
+end_date = datetime(2026, 12, 31, 23, 59, 59, tzinfo=local_tz)
 # --- END CONFIG ---
 
 # Convert start/end dates to UTC timestamps (seconds)
@@ -38,23 +30,36 @@ FROM revlog
 WHERE id/1000 BETWEEN ? AND ?
 """
 cur.execute(query, (start_ts, end_ts))
-
 rows = cur.fetchall()
+conn.close()
 
 # Initialize hourly counts
 hourly_counts = {f"{h:02}": 0 for h in range(24)}
 
+# Count reviews per hour using historical local time
 for row in rows:
-    ts = row["id"] / 1000  # convert milliseconds to seconds
-    dt = datetime.fromtimestamp(ts, tz=local_tz)  # historical local time with DST
+    ts = row["id"] / 1000  # milliseconds → seconds
+    dt = datetime.fromtimestamp(ts, tz=local_tz)
     hour = f"{dt.hour:02}"
     hourly_counts[hour] += 1
 
-# Print results
+# --- Print hourly breakdown ---
 print(f"Reviews from {start_date} to {end_date}")
 print("Hour | Reviews")
 for h in range(24):
     hour_str = f"{h:02}"
     print(f"{hour_str}   | {hourly_counts[hour_str]}")
 
-conn.close()
+# --- Plotting ---
+hours = list(hourly_counts.keys())
+counts = list(hourly_counts.values())
+
+plt.figure(figsize=(12, 6))
+plt.bar(hours, counts, color="skyblue")
+plt.title(f"Anki Reviews by Hour ({start_date.date()} to {end_date.date()})", fontsize=14)
+plt.xlabel("Hour of Day", fontsize=12)
+plt.ylabel("Number of Reviews", fontsize=12)
+plt.xticks(hours)  # show all hours
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+plt.tight_layout()
+plt.show()
