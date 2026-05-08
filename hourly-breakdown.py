@@ -10,7 +10,7 @@ anki_db_path = r"C:\Users\Kopecky_J\AppData\Roaming\Anki2\User 1\collection.anki
 local_tz = ZoneInfo("Europe/Berlin")
 
 # Date range
-start_date = datetime(2020, 11, 1, tzinfo=local_tz)
+start_date = datetime(2020, 1, 1, tzinfo=local_tz)
 end_date = datetime(2026, 12, 31, 23, 59, 59, tzinfo=local_tz)
 # --- END CONFIG ---
 
